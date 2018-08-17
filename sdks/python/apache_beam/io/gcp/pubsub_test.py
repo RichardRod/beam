@@ -33,8 +33,6 @@ import mock
 import apache_beam as beam
 from apache_beam.io.gcp.pubsub import PubsubMessage
 from apache_beam.io.gcp.pubsub import ReadFromPubSub
-from apache_beam.io.gcp.pubsub import ReadStringsFromPubSub
-from apache_beam.io.gcp.pubsub import WriteStringsToPubSub
 from apache_beam.io.gcp.pubsub import WriteToPubSub
 from apache_beam.io.gcp.pubsub import _PubSubSink
 from apache_beam.io.gcp.pubsub import _PubSubSource
@@ -208,7 +206,8 @@ class TestWriteStringsToPubSubOverride(unittest.TestCase):
     p.options.view_as(StandardOptions).streaming = True
     pcoll = (p
              | ReadFromPubSub('projects/fakeprj/topics/baz')
-             | WriteStringsToPubSub('projects/fakeprj/topics/a_topic')
+             | WriteToPubSub('projects/fakeprj/topics/a_topic',
+                             with_attributes=True)
              | beam.Map(lambda x: x))
 
     # Apply the necessary PTransformOverrides.
@@ -460,7 +459,7 @@ class TestReadFromPubSub(unittest.TestCase):
     data_encoded = data.encode('utf-8')
     publish_time = '2018-03-12T13:37:01.234567Z'
     payloads = [create_client_message(data_encoded, None, None, publish_time)]
-    expected_elements = [data]
+    expected_elements = [data_encoded]
 
     mock_pubsub.Client = functools.partial(FakePubsubClient, payloads)
     mock_pubsub.subscription.AutoAck = FakeAutoAck
@@ -468,8 +467,8 @@ class TestReadFromPubSub(unittest.TestCase):
     p = TestPipeline()
     p.options.view_as(StandardOptions).streaming = True
     pcoll = (p
-             | ReadStringsFromPubSub('projects/fakeprj/topics/a_topic',
-                                     None, None))
+             | ReadFromPubSub('projects/fakeprj/topics/a_topic',
+                              None, None))
     assert_that(pcoll, equal_to(expected_elements))
     p.run()
 
@@ -646,7 +645,7 @@ class TestWriteToPubSub(unittest.TestCase):
     p.options.view_as(StandardOptions).streaming = True
     _ = (p
          | Create(payloads)
-         | WriteStringsToPubSub('projects/fakeprj/topics/a_topic'))
+         | WriteToPubSub('projects/fakeprj/topics/a_topic'))
     p.run()
 
   @mock.patch('google.cloud.pubsub')

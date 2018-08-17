@@ -70,9 +70,9 @@ class PortableRunner(runner.PipelineRunner):
 
   def run_pipeline(self, pipeline):
     docker_image = (
-        pipeline.options.view_as(PortableOptions).harness_docker_image
+        pipeline._options.view_as(PortableOptions).harness_docker_image
         or self.default_docker_image())
-    job_endpoint = pipeline.options.view_as(PortableOptions).job_endpoint
+    job_endpoint = pipeline._options.view_as(PortableOptions).job_endpoint
     if not job_endpoint:
       raise ValueError(
           'job_endpoint should be provided while creating runner.')
